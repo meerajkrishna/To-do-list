@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productivity Command Center</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- GSAP for animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- SortableJS for drag and drop -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .dark .glass-effect {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .task-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .task-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .dark .task-card:hover {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .priority-high {
+            border-left: 4px solid #ef4444;
+        }
+        
+        .priority-medium {
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .priority-low {
+            border-left: 4px solid #10b981;
+        }
+        
+        .completed {
+            opacity: 0.6;
+            text-decoration: line-through;
+        }
+        
+        .floating-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 50;
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .pomodoro-timer {
+            background: conic-gradient(#667eea var(--progress, 0%), #e5e7eb var(--progress, 0%));
+        }
+        
+        .dark .pomodoro-timer {
+            background: conic-gradient(#667eea var(--progress, 0%), #374151 var(--progress, 0%));
+        }
+        
+        .sidebar-toggle {
+            transition: transform 0.3s ease;
+        }
+        
+        .sidebar-open .sidebar-toggle {
+            transform: translateX(16rem);
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar-open .sidebar-toggle {
+                transform: translateX(0);
+            }
+        }
+    </style>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f4ff',
+                            500: '#667eea',
+                            600: '#5a67d8',
+                            700: '#4c51bf',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <!-- Header -->
+    <header class="sticky top-0 z-40 gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <button id="sidebarToggle" class="md:hidden text-white hover:text-gray-200 transition-colors">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <h1 class="text-2xl md:text-3xl font-bold">
+                        <i class="fas fa-rocket mr-2"></i>
+                        Productivity Command Center
+                    </h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="darkModeToggle" class="text-white hover:text-gray-200 transition-colors">
+                        <i class="fas fa-moon text-xl"></i>
+                    </button>
+                    <button id="addTaskBtn" class="bg-white text-purple-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-plus mr-2"></i>Add Task
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="w-64 bg-white dark:bg-gray-800 shadow-lg transform -translate-x-full md:translate-x-0 transition-transform duration-300 fixed md:relative z-30 h-full">
+            <div class="p-6">
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+                        <i class="fas fa-filter mr-2"></i>Filters
+                    </h3>
+                    
+                    <!-- Status Filter -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
+                        <select id="statusFilter" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                            <option value="all">All Tasks</option>
+                            <option value="pending">Pending</option>
+                            <option value="completed">Completed</option>
+                            <option value="overdue">Overdue</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Category Filter -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
+                        <select id="categoryFilter" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                            <option value="all">All Categories</option>
+                            <option value="work">Work</option>
+                            <option value="personal">Personal</option>
+                            <option value="urgent">Urgent</option>
+                            <option value="later">Later</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Priority Filter -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Priority</label>
+                        <select id="priorityFilter" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                            <option value="all">All Priorities</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Statistics -->
+                <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                    <h4 class="font-semibold text-gray-800 dark:text-white mb-3">
+                        <i class="fas fa-chart-pie mr-2"></i>Statistics
+                    </h4>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-300">Total Tasks:</span>
+                            <span id="totalTasks" class="font-semibold text-gray-800 dark:text-white">0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-300">Completed:</span>
+                            <span id="completedTasks" class="font-semibold text-green-600">0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-300">Pending:</span>
+                            <span id="pendingTasks" class="font-semibold text-blue-600">0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-300">Overdue:</span>
+                            <span id="overdueTasks" class="font-semibold text-red-600">0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Export/Import -->
+                <div class="mt-6 space-y-2">
+                    <button id="exportBtn" class="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors">
+                        <i class="fas fa-download mr-2"></i>Export Data
+                    </button>
+                    <button id="importBtn" class="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-upload mr-2"></i>Import Data
+                    </button>
+                    <input type="file" id="importFile" accept=".json" class="hidden">
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-6 sidebar-toggle">
+            <!-- Quick Add Section -->
+            <div id="quickAddSection" class="mb-6 hidden">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 dark:text-white mb-4">
+                        <i class="fas fa-plus-circle mr-2"></i>Add New Task
+                    </h3>
+                    <form id="taskForm" class="space-y-4">
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title *</label>
+                                <input type="text" id="taskTitle" required class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="Enter task title...">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
+                                <select id="taskCategory" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                    <option value="work">Work</option>
+                                    <option value="personal">Personal</option>
+                                    <option value="urgent">Urgent</option>
+                                    <option value="later">Later</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
+                            <textarea id="taskDescription" rows="3" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="Add a description (optional)..."></textarea>
+                        </div>
+                        
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Due Date</label>
+                                <input type="datetime-local" id="taskDueDate" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Priority</label>
+                                <select id="taskPriority" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                    <option value="low">Low</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="high">High</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="flex space-x-4">
+                            <button type="submit" class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors">
+                                <i class="fas fa-save mr-2"></i>Save Task
+                            </button>
+                            <button type="button" id="cancelTaskBtn" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors">
+                                <i class="fas fa-times mr-2"></i>Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tasks Container -->
+            <div id="tasksContainer">
+                <!-- Tasks will be dynamically inserted here -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="text-center py-12 hidden">
+                <div class="text-6xl mb-4">🚀</div>
+                <h3 class="text-2xl font-semibold text-gray-800 dark:text-white mb-2">Ready for Productivity?</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-6">You haven't created any tasks yet. Let's get started!</p>
+                <button class="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 transition-colors font-semibold" onclick="showQuickAdd()">
+                    <i class="fas fa-plus mr-2"></i>Create Your First Task
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button id="floatingAddBtn" class="floating-btn bg-purple-600 text-white p-4 rounded-full hover:bg-purple-700 transition-all duration-300 hover:scale-110">
+        <i class="fas fa-plus text-xl"></i>
+    </button>
+
+    <!-- Gamification Toast -->
+    <div id="gamificationToast" class="fixed top-20 right-6 z-50 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300">
+        <div class="flex items-center">
+            <span class="text-2xl mr-3">🎉</span>
+            <div>
+                <div class="font-semibold">Awesome!</div>
+                <div class="text-sm opacity-90" id="toastMessage">You've completed a task!</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Edit Modal -->
+    <div id="editModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm" onclick="closeEditModal()"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+            <h3 class="text-xl font-semibold text-gray-800 dark:text-white mb-4">
+                <i class="fas fa-edit mr-2"></i>Edit Task
+            </h3>
+            <form id="editTaskForm" class="space-y-4">
+                <input type="hidden" id="editTaskId">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title</label>
+                    <input type="text" id="editTaskTitle" required class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
+                    <textarea id="editTaskDescription" rows="3" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
+                        <select id="editTaskCategory" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                            <option value="work">Work</option>
+                            <option value="personal">Personal</option>
+                            <option value="urgent">Urgent</option>
+                            <option value="later">Later</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Priority</label>
+                        <select id="editTaskPriority" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Due Date</label>
+                    <input type="datetime-local" id="editTaskDueDate" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                </div>
+                <div class="flex space-x-4">
+                    <button type="submit" class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors">
+                        <i class="fas fa-save mr-2"></i>Update
+                    </button>
+                    <button type="button" onclick="closeEditModal()" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-times mr-2"></i>Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let tasks = [];
+        let currentEditId = null;
+        let completedTasksCount = 0;
+        let pomodoroTimers = new Map();
+        
+        // Load tasks from localStorage on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadTasks();
+            setupEventListeners();
+            updateStatistics();
+            checkDarkMode();
+            renderTasks();
+        });
+        
+        // Event listeners setup
+        function setupEventListeners() {
+            // Header buttons
+            document.getElementById('addTaskBtn').addEventListener('click', showQuickAdd);
+            document.getElementById('floatingAddBtn').addEventListener('click', showQuickAdd);
+            document.getElementById('darkModeToggle').addEventListener('click', toggleDarkMode);
+            document.getElementById('sidebarToggle').addEventListener('click', toggleSidebar);
+            
+            // Form submissions
+            document.getElementById('taskForm').addEventListener('submit', handleTaskSubmit);
+            document.getElementById('editTaskForm').addEventListener('submit', handleEditSubmit);
+            document.getElementById('cancelTaskBtn').addEventListener('click', hideQuickAdd);
+            
+            // Filters
+            document.getElementById('statusFilter').addEventListener('change', applyFilters);
+            document.getElementById('categoryFilter').addEventListener('change', applyFilters);
+            document.getElementById('priorityFilter').addEventListener('change', applyFilters);
+            
+            // Export/Import
+            document.getElementById('exportBtn').addEventListener('click', exportTasks);
+            document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+            document.getElementById('importFile').addEventListener('change', importTasks);
+        }
+        
+        // Task management functions
+        function showQuickAdd() {
+            const section = document.getElementById('quickAddSection');
+            section.classList.remove('hidden');
+            gsap.fromTo(section, {opacity: 0, y: -20}, {opacity: 1, y: 0, duration: 0.3});
+            document.getElementById('taskTitle').focus();
+        }
+        
+        function hideQuickAdd() {
+            const section = document.getElementById('quickAddSection');
+            gsap.to(section, {
+                opacity: 0, 
+                y: -20, 
+                duration: 0.3, 
+                onComplete: () => {
+                    section.classList.add('hidden');
+                    document.getElementById('taskForm').reset();
+                }
+            });
+        }
+        
+        function handleTaskSubmit(e) {
+            e.preventDefault();
+            
+            const task = {
+                id: Date.now().toString(),
+                title: document.getElementById('taskTitle').value,
+                description: document.getElementById('taskDescription').value,
+                category: document.getElementById('taskCategory').value,
+                priority: document.getElementById('taskPriority').value,
+                dueDate: document.getElementById('taskDueDate').value,
+                completed: false,
+                createdAt: new Date().toISOString(),
+                pomodoroTime: 0
+            };
+            
+            tasks.push(task);
+            saveTasks();
+            renderTasks();
+            updateStatistics();
+            hideQuickAdd();
+            
+            showGamificationToast('Task created! 🎯', 'bg-blue-500');
+        }
+        
+        function toggleTask(id) {
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                task.completed = !task.completed;
+                
+                if (task.completed) {
+                    completedTasksCount++;
+                    showGamificationMessage();
+                }
+                
+                saveTasks();
+                renderTasks();
+                updateStatistics();
+                
+                // Animation for completion
+                const taskElement = document.querySelector(`[data-task-id="${id}"]`);
+                if (task.completed) {
+                    gsap.to(taskElement, {scale: 1.05, duration: 0.2, yoyo: true, repeat: 1});
+                    showGamificationToast('Task completed! 🎉', 'bg-green-500');
+                }
+            }
+        }
+        
+        function deleteTask(id) {
+            if (confirm('Are you sure you want to delete this task?')) {
+                tasks = tasks.filter(t => t.id !== id);
+                saveTasks();
+                renderTasks();
+                updateStatistics();
+                
+                showGamificationToast('Task deleted! 🗑️', 'bg-red-500');
+            }
+        }
+        
+        function editTask(id) {
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                currentEditId = id;
+                document.getElementById('editTaskId').value = id;
+                document.getElementById('editTaskTitle').value = task.title;
+                document.getElementById('editTaskDescription').value = task.description || '';
+                document.getElementById('editTaskCategory').value = task.category;
+                document.getElementById('editTaskPriority').value = task.priority;
+                document.getElementById('editTaskDueDate').value = task.dueDate || '';
+                
+                document.getElementById('editModal').classList.remove('hidden');
+                gsap.fromTo('#editModal > div:last-child', {scale: 0.8, opacity: 0}, {scale: 1, opacity: 1, duration: 0.3});
+            }
+        }
+        
+        function closeEditModal() {
+            gsap.to('#editModal > div:last-child', {
+                scale: 0.8, 
+                opacity: 0, 
+                duration: 0.3,
+                onComplete: () => {
+                    document.getElementById('editModal').classList.add('hidden');
+                    currentEditId = null;
+                }
+            });
+        }
+        
+        function handleEditSubmit(e) {
+            e.preventDefault();
+            
+            const task = tasks.find(t => t.id === currentEditId);
+            if (task) {
+                task.title = document.getElementById('editTaskTitle').value;
+                task.description = document.getElementById('editTaskDescription').value;
+                task.category = document.getElementById('editTaskCategory').value;
+                task.priority = document.getElementById('editTaskPriority').value;
+                task.dueDate = document.getElementById('editTaskDueDate').value;
+                
+                saveTasks();
+                renderTasks();
+                updateStatistics();
+                closeEditModal();
+                
+                showGamificationToast('Task updated! ✏️', 'bg-purple-500');
+            }
+        }
+        
+        function startPomodoro(taskId) {
+            const duration = 25 * 60; // 25 minutes in seconds
+            const startTime = Date.now();
+            
+            const timer = {
+                startTime,
+                duration,
+                interval: setInterval(() => updatePomodoroDisplay(taskId, startTime, duration), 1000)
+            };
+            
+            pomodoroTimers.set(taskId, timer);
+            updatePomodoroDisplay(taskId, startTime, duration);
+            
+            showGamificationToast('Pomodoro started! 🍅', 'bg-orange-500');
+        }
+        
+        function stopPomodoro(taskId) {
+            const timer = pomodoroTimers.get(taskId);
+            if (timer) {
+                clearInterval(timer.interval);
+                pomodoroTimers.delete(taskId);
+                
+                // Update task's pomodoro time
+                const task = tasks.find(t => t.id === taskId);
+                if (task) {
+                    const elapsed = Math.floor((Date.now() - timer.startTime) / 1000);
+                    task.pomodoroTime = (task.pomodoroTime || 0) + elapsed;
+                    saveTasks();
+                }
+                
+                renderTasks();
+                showGamificationToast('Pomodoro stopped! ⏹️', 'bg-gray-500');
+            }
+        }
+        
+        function updatePomodoroDisplay(taskId, startTime, duration) {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const remaining = Math.max(0, duration - elapsed);
+            const progress = ((duration - remaining) / duration) * 100;
+            
+            const timerElement = document.querySelector(`[data-timer-id="${taskId}"]`);
+            if (timerElement) {
+                const minutes = Math.floor(remaining / 60);
+                const seconds = remaining % 60;
+                timerElement.innerHTML = `
+                    <div class="pomodoro-timer w-16 h-16 rounded-full flex items-center justify-center text-xs font-bold" style="--progress: ${progress}%">
+                        ${minutes}:${seconds.toString().padStart(2, '0')}
+                    </div>
+                `;
+                
+                if (remaining === 0) {
+                    stopPomodoro(taskId);
+                    showGamificationToast('Pomodoro completed! 🎉', 'bg-green-500');
+                }
+            }
+        }
+        
+        function renderTasks() {
+            const container = document.getElementById('tasksContainer');
+            const emptyState = document.getElementById('emptyState');
+            
+            const filteredTasks = getFilteredTasks();
+            
+            if (filteredTasks.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            emptyState.classList.add('hidden');
+            
+            // Group tasks by category
+            const groupedTasks = filteredTasks.reduce((groups, task) => {
+                const category = task.category;
+                if (!groups[category]) groups[category] = [];
+                groups[category].push(task);
+                return groups;
+            }, {});
+            
+            let html = '';
+            
+            Object.entries(groupedTasks).forEach(([category, categoryTasks]) => {
+                html += `
+                    <div class="mb-8">
+                        <h3 class="text-xl font-semibold text-gray-800 dark:text-white mb-4 capitalize">
+                            <i class="fas fa-folder mr-2"></i>${category}
+                            <span class="text-sm text-gray-500 ml-2">(${categoryTasks.length})</span>
+                        </h3>
+                        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3" id="category-${category}">
+                            ${categoryTasks.map(task => renderTaskCard(task)).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // Initialize sortable for each category
+            Object.keys(groupedTasks).forEach(category => {
+                const categoryElement = document.getElementById(`category-${category}`);
+                if (categoryElement) {
+                    new Sortable(categoryElement, {
+                        animation: 150,
+                        ghostClass: 'opacity-50',
+                        onEnd: function(evt) {
+                            // Handle reordering logic here if needed
+                        }
+                    });
+                }
+            });
+            
+            // Animate new tasks
+            gsap.fromTo('.task-card', {opacity: 0, y: 20}, {opacity: 1, y: 0, duration: 0.5, stagger: 0.1});
+        }
+        
+        function renderTaskCard(task) {
+            const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && !task.completed;
+            const hasTimer = pomodoroTimers.has(task.id);
+            
+            return `
+                <div class="task-card bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 priority-${task.priority} ${task.completed ? 'completed' : ''}" data-task-id="${task.id}">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center space-x-3">
+                            <button onclick="toggleTask('${task.id}')" class="text-2xl ${task.completed ? 'text-green-500' : 'text-gray-400 hover:text-green-500'} transition-colors">
+                                <i class="fas ${task.completed ? 'fa-check-circle' : 'fa-circle'}"></i>
+                            </button>
+                            <div>
+                                <h4 class="font-semibold text-gray-800 dark:text-white ${task.completed ? 'line-through' : ''}">${task.title}</h4>
+                                ${task.description ? `<p class="text-sm text-gray-600 dark:text-gray-400 mt-1">${task.description}</p>` : ''}
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold ${getPriorityColor(task.priority)}">
+                                ${task.priority.toUpperCase()}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    ${task.dueDate ? `
+                        <div class="flex items-center text-sm mb-3 ${isOverdue ? 'text-red-500' : 'text-gray-600 dark:text-gray-400'}">
+                            <i class="fas fa-clock mr-2"></i>
+                            ${formatDueDate(task.dueDate)}
+                            ${isOverdue ? '<i class="fas fa-exclamation-triangle ml-2"></i>' : ''}
+                        </div>
+                    ` : ''}
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <button onclick="editTask('${task.id}')" class="text-blue-500 hover:text-blue-600 transition-colors">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteTask('${task.id}')" class="text-red-500 hover:text-red-600 transition-colors">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            ${!task.completed ? `
+                                <button onclick="${hasTimer ? `stopPomodoro('${task.id}')` : `startPomodoro('${task.id}')`}" class="text-orange-500 hover:text-orange-600 transition-colors">
+                                    <i class="fas ${hasTimer ? 'fa-stop' : 'fa-play'}"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                        
+                        ${hasTimer ? `<div data-timer-id="${task.id}"></div>` : ''}
+                        
+                        ${task.pomodoroTime ? `
+                            <div class="text-xs text-gray-500">
+                                <i class="fas fa-stopwatch mr-1"></i>
+                                ${Math.floor(task.pomodoroTime / 60)}m
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function getPriorityColor(priority) {
+            switch(priority) {
+                case 'high': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+                case 'medium': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+                case 'low': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+                default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+            }
+        }
+        
+        function formatDueDate(dueDate) {
+            const date = new Date(dueDate);
+            const now = new Date();
+            const diffTime = date - now;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays < 0) {
+                return `Overdue by ${Math.abs(diffDays)} day(s)`;
+            } else if (diffDays === 0) {
+                return `Due today at ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+            } else if (diffDays === 1) {
+                return `Due tomorrow at ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+            } else {
+                return `Due in ${diffDays} day(s)`;
+            }
+        }
+        
+        function getFilteredTasks() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const priorityFilter = document.getElementById('priorityFilter').value;
+            
+            return tasks.filter(task => {
+                // Status filter
+                if (statusFilter === 'completed' && !task.completed) return false;
+                if (statusFilter === 'pending' && task.completed) return false;
+                if (statusFilter === 'overdue') {
+                    const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && !task.completed;
+                    if (!isOverdue) return false;
+                }
+                
+                // Category filter
+                if (categoryFilter !== 'all' && task.category !== categoryFilter) return false;
+                
+                // Priority filter
+                if (priorityFilter !== 'all' && task.priority !== priorityFilter) return false;
+                
+                return true;
+            });
+        }
+        
+        function applyFilters() {
+            renderTasks();
+        }
+        
+        function updateStatistics() {
+            const total = tasks.length;
+            const completed = tasks.filter(t => t.completed).length;
+            const pending = tasks.filter(t => !t.completed).length;
+            const overdue = tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && !t.completed).length;
+            
+            document.getElementById('totalTasks').textContent = total;
+            document.getElementById('completedTasks').textContent = completed;
+            document.getElementById('pendingTasks').textContent = pending;
+            document.getElementById('overdueTasks').textContent = overdue;
+        }
+        
+        function showGamificationMessage() {
+            const milestones = [5, 10, 25, 50, 100];
+            const currentCount = tasks.filter(t => t.completed).length;
+            
+            if (milestones.includes(currentCount)) {
+                showGamificationToast(`Amazing! You've completed ${currentCount} tasks! 🎉`, 'bg-purple-500');
+            }
+        }
+        
+        function showGamificationToast(message, bgClass = 'bg-green-500') {
+            const toast = document.getElementById('gamificationToast');
+            const messageEl = document.getElementById('toastMessage');
+            
+            toast.className = `fixed top-20 right-6 z-50 ${bgClass} text-white px-6 py-4 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300`;
+            messageEl.textContent = message;
+            
+            // Show toast
+            setTimeout(() => {
+                toast.style.transform = 'translateX(0)';
+            }, 100);
+            
+            // Hide toast after 3 seconds
+            setTimeout(() => {
+                toast.style.transform = 'translateX(100%)';
+            }, 3000);
+        }
+        
+        // Dark mode functions
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const isDark = html.classList.contains('dark');
+            
+            if (isDark) {
+                html.classList.remove('dark');
+                localStorage.setItem('darkMode', 'false');
+                document.getElementById('darkModeToggle').innerHTML = '<i class="fas fa-moon text-xl"></i>';
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('darkMode', 'true');
+                document.getElementById('darkModeToggle').innerHTML = '<i class="fas fa-sun text-xl"></i>';
+            }
+        }
+        
+        function checkDarkMode() {
+            const darkMode = localStorage.getItem('darkMode');
+            if (darkMode === 'true') {
+                document.documentElement.classList.add('dark');
+                document.getElementById('darkModeToggle').innerHTML = '<i class="fas fa-sun text-xl"></i>';
+            }
+        }
+        
+        // Sidebar functions
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const body = document.body;
+            
+            if (sidebar.style.transform === 'translateX(0px)' || sidebar.style.transform === '') {
+                sidebar.style.transform = 'translateX(-100%)';
+                body.classList.remove('sidebar-open');
+            } else {
+                sidebar.style.transform = 'translateX(0px)';
+                body.classList.add('sidebar-open');
+            }
+        }
+        
+        // Data persistence functions
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+        
+        function loadTasks() {
+            const savedTasks = localStorage.getItem('tasks');
+            if (savedTasks) {
+                tasks = JSON.parse(savedTasks);
+            }
+        }
+        
+        function exportTasks() {
+            const dataStr = JSON.stringify(tasks, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `tasks-backup-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            URL.revokeObjectURL(url);
+            showGamificationToast('Tasks exported! 📁', 'bg-blue-500');
+        }
+        
+        function importTasks(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedTasks = JSON.parse(e.target.result);
+                    if (Array.isArray(importedTasks)) {
+                        tasks = importedTasks;
+                        saveTasks();
+                        renderTasks();
+                        updateStatistics();
+                        showGamificationToast('Tasks imported successfully! 📥', 'bg-green-500');
+                    } else {
+                        throw new Error('Invalid file format');
+                    }
+                } catch (error) {
+                    alert('Error importing tasks. Please check the file format.');
+                }
+            };
+            reader.readAsText(file);
+            
+            // Reset file input
+            event.target.value = '';
+        }
+        
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            
+            if (window.innerWidth < 768 && 
+                !sidebar.contains(event.target) && 
+                !sidebarToggle.contains(event.target) &&
+                sidebar.style.transform === 'translateX(0px)') {
+                toggleSidebar();
+            }
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            const sidebar = document.getElementById('sidebar');
+            if (window.innerWidth >= 768) {
+                sidebar.style.transform = '';
+                document.body.classList.remove('sidebar-open');
+            }
+        });
+    </script>
+</body>
+</html>
