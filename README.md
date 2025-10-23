@@ -1,88 +1,93 @@
-A modern To-Do List Web App by **Meeraj Krishna***
+# 🚀 Productivity Command Center
 
-📋 Overview
-The **Productivity Command Center** is a feature-rich to-do list web application designed to help users organize, prioritize, and track their daily tasks efficiently.  
-It includes advanced features like task filtering, dark mode, Pomodoro timers, drag-and-drop task organization, and local storage support — all in one sleek interface.  
+A modern **To-Do Web App** built using **Tailwind CSS**, **GSAP**, **SortableJS**, and **FontAwesome**, designed to manage tasks efficiently with features like:
+- Pomodoro timer integration 🍅  
+- Task filtering, categorization, and priority management  
+- Dark/light mode toggle 🌙☀️  
+- Gamification-based task completion 🎉  
+- Task export/import via JSON  
 
+---
 
+## 🧑‍💻 Author
+**Developed by:** [Meeraj Krishna](#)  
+**All rights and credits belong to:** *Meeraj Krishna*  
 
-🚀 Features
+---
 
- 🗂️ Task Management
-- Add, edit, delete, and mark tasks as completed.  
-- Categorize tasks into **Work**, **Personal**, **Urgent**, and **Later**.  
-- Set **priority levels** (High, Medium, Low).  
-- Assign **due dates** and automatically detect overdue tasks.  
+## 🗂️ Project Structure
+| File | Description |
+|------|--------------|
+| `to-do.html` | Main application file containing full UI, logic, and animations |
+| `README.md` | Documentation (this file) |
+| `/assets` *(optional)* | Folder to store screenshots and JSON exports |
 
-⏱️ Pomodoro Timer
-- Start a **25-minute Pomodoro session** directly from each task.  
-- Real-time circular progress visualization.  
-- Automatic updates and notifications when the timer completes.  
+---
 
-📊 Filters & Statistics
-- Filter tasks by **status, category, or priority**.  
-- View live statistics:  
-  - Total tasks  
-  - Completed  
-  - Pending  
-  - Overdue  
+## 🖥️ How It Works
+1. **Add new tasks** using the “Add Task” button or floating action button.  
+2. **Set category, due date, and priority.**  
+3. **Track tasks** — pending, completed, and overdue — via the live statistics panel.  
+4. **Start a Pomodoro timer** for focused work sessions.  
+5. **Export or import** tasks anytime using the sidebar options.  
 
-🎮 Gamification
-- Fun **toast notifications** when completing tasks.  
-- **Milestone celebrations** for achievements (e.g., completing 10 or 25 tasks).  
+---
 
-🌙 Dark Mode
-- Toggle between **light and dark themes**.  
-- Preference saved using `localStorage`.  
+## 🌗 Dark Mode
+Toggle between light and dark themes using the moon/sun icon in the top bar.  
+Dark mode preference is automatically saved to localStorage.
 
-💾 Data Management
-- **Export tasks** to a JSON file.  
-- **Import tasks** back for easy backup and restoration.  
-- All data is saved locally using **localStorage**, ensuring privacy.  
+---
 
-🧩 Drag & Drop Support
-- Reorder tasks easily within categories using **SortableJS**.  
+## 🎮 Gamification
+- Completing tasks triggers animations and celebration toasts.  
+- Special milestones (5, 10, 25, 50, 100 tasks) unlock motivational popups!
 
+---
 
+## 📦 Dependencies
+The app uses:
+- [Tailwind CSS CDN](https://cdn.tailwindcss.com/)
+- [GSAP](https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js)
+- [SortableJS](https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js)
+- [FontAwesome 6.4.0](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css)
+- [Google Fonts - Inter](https://fonts.google.com/specimen/Inter)
 
-🛠️ Technologies Used
-- **HTML5**  
-- **Tailwind CSS** (for modern responsive styling)  
-- **JavaScript (ES6)**  
-- **GSAP** (for smooth animations)  
-- **FontAwesome** (for icons)  
-- **SortableJS** (for drag-and-drop features)  
-- **LocalStorage API** (for data persistence)  
+---
 
+## 🧾 Preview (Screenshot)
+Below is how the output looks when you run the file in a browser 👇
 
+![Screenshot](assets/screenshot.png)  
+*(Make sure to place your screenshot as `assets/screenshot.png`)*  
 
-⚙️ Installation & Usage
+**Source file:** [`to-do.html`](./to-do.html)
 
-1. **Download or Clone the Repository**
-   ```bash
-   git clone https://github.com/meerajkrishna/productivity-command-center.git
-   ```
+---
 
-2. Open the Project**
-   - Simply open the file `to-do.html` in any modern browser.  
-   - No additional setup or server is required.  
+## 🧠 Key Features Highlight
+✅ Add, edit, delete, and mark tasks complete  
+✅ Filter by **status**, **category**, and **priority**  
+✅ Animated UI transitions using **GSAP**  
+✅ Pomodoro productivity timer  
+✅ Data persistence with **localStorage**  
+✅ Gamified notifications & toasts  
+✅ Responsive design (mobile & desktop)
 
-3. Start Managing Tasks**
-   - Click **“Add Task”** to create your first task.  
-   - Use filters to customize your view.  
-   - Export and import data anytime!  
+---
 
+## ⚙️ How to Run
+1. Download or clone this repository.  
+2. Open `to-do.html` in any modern browser (Chrome, Edge, Firefox, Safari).  
+3. Start adding tasks and enjoy productive flow!
 
+---
 
-🧑‍💻 Developer
-**Name:** Meeraj Krishna  
-**Project:** Productivity Command Center  
-**Version:** 1.0  
-**License:** MIT (Feel free to modify and reuse with credit)  
+## 🏁 License
+This project is **open for learning and personal use**.  
+**© 2025 Meeraj Krishna. All Rights Reserved.**
 
+---
 
-
-🌟 Future Improvements
-- Cloud sync using Firebase or IndexedDB.  
-- User authentication and multiple lists.  
-- Reminder notifications and calendar integration.  
+## 🔗 Source
+👉 [GitHub Repository (Upload yours here once live)](#)
