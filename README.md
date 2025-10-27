@@ -58,8 +58,7 @@ The app uses:
 ## 🧾 Preview (Screenshot)
 Below is how the output looks when you run the file in a browser 👇
 
-![Screenshot](assets/screenshot.png)  
-*(Make sure to place your screenshot as `assets/screenshot.png`)*  
+![Image](https://github.com/user-attachments/assets/355b5d1a-06b8-494b-bb5d-eb5961f1300d)  
 
 **Source file:** [`to-do.html`](./to-do.html)
 
